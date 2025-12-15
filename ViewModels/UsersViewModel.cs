@@ -185,29 +185,31 @@ public partial class UsersViewModel : ObservableObject
     [RelayCommand]
     private async Task Save()
     {
-        if (SelectedUser == null) return;
+        // Capture the current selected user to avoid issues if selection changes during async operations
+        var userToSave = SelectedUser;
+        if (userToSave == null) return;
 
         try
         {
-            if (string.IsNullOrWhiteSpace(SelectedUser.Username))
+            if (string.IsNullOrWhiteSpace(userToSave.Username))
             {
                 MessageBox.Show("Username is required", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(SelectedUser.Password))
+            if (string.IsNullOrWhiteSpace(userToSave.Password))
             {
                 MessageBox.Show("Password is required", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(SelectedUser.Role))
+            if (string.IsNullOrWhiteSpace(userToSave.Role))
             {
                 MessageBox.Show("Role is required", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            if (SelectedUser.Role == "Customer")
+            if (userToSave.Role == "Customer")
             {
                 if (string.IsNullOrWhiteSpace(CustomerName))
                 {
@@ -216,7 +218,7 @@ public partial class UsersViewModel : ObservableObject
                 }
 
                 // Create new customer if user is new or doesn't have linked customer
-                if (SelectedUser.UserId == 0 || SelectedUser.CustomerId == null)
+                if (userToSave.UserId == 0 || userToSave.CustomerId == null)
                 {
                     var newCustomer = new Customer
                     {
@@ -227,15 +229,15 @@ public partial class UsersViewModel : ObservableObject
                     };
 
                     var createdCustomer = await _customerService.CreateAsync(newCustomer);
-                    SelectedUser.CustomerId = createdCustomer.CustomerId;
+                    userToSave.CustomerId = createdCustomer.CustomerId;
                     
                     // Sync User.FullName with Customer.Name
-                    SelectedUser.FullName = CustomerName.Trim();
+                    userToSave.FullName = CustomerName.Trim();
                 }
                 else
                 {
                     // Update existing customer
-                    var existingCustomer = await _customerService.GetByIdAsync(SelectedUser.CustomerId.Value);
+                    var existingCustomer = await _customerService.GetByIdAsync(userToSave.CustomerId.Value);
                     if (existingCustomer != null)
                     {
                         existingCustomer.Name = CustomerName.Trim();
@@ -244,28 +246,28 @@ public partial class UsersViewModel : ObservableObject
                         await _customerService.UpdateAsync(existingCustomer);
                         
                         // Sync User.FullName with Customer.Name
-                        SelectedUser.FullName = CustomerName.Trim();
+                        userToSave.FullName = CustomerName.Trim();
                     }
                 }
             }
             else
             {
                 // For Admin/Staff roles, clear customer link
-                SelectedUser.CustomerId = null;
+                userToSave.CustomerId = null;
             }
 
             // Save the user ID before clearing selection
-            var savedUserId = SelectedUser.UserId;
+            var savedUserId = userToSave.UserId;
             var isNewUser = savedUserId == 0;
 
             if (isNewUser)
             {
-                await _userService.CreateAsync(SelectedUser);
+                await _userService.CreateAsync(userToSave);
                 MessageBox.Show("User created successfully", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
             {
-                await _userService.UpdateAsync(SelectedUser);
+                await _userService.UpdateAsync(userToSave);
                 MessageBox.Show("User updated successfully", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
 
