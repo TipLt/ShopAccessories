@@ -53,7 +53,14 @@ public class CategoryService : ICategoryService
     {
         _authorizationService.EnsureCanUpdate("Categories");
         using var context = new ShopAccessoriesContext();
-        context.Categories.Update(category);
+        
+        var existingCategory = await context.Categories.FindAsync(category.CategoryId);
+        if (existingCategory == null)
+            throw new InvalidOperationException($"Category with ID {category.CategoryId} not found");
+        
+        existingCategory.Name = category.Name;
+        existingCategory.IsActive = category.IsActive;
+        
         await context.SaveChangesAsync();
     }
 
