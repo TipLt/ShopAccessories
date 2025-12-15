@@ -68,7 +68,18 @@ public class ProductService : IProductService
         if (existingCode)
             throw new InvalidOperationException($"Product code '{product.Code}' already exists");
 
-        context.Products.Update(product);
+        var existingProduct = await context.Products.FindAsync(product.ProductId);
+        if (existingProduct == null)
+            throw new InvalidOperationException($"Product with ID {product.ProductId} not found");
+        
+        existingProduct.Name = product.Name;
+        existingProduct.Code = product.Code;
+        existingProduct.Description = product.Description;
+        existingProduct.Price = product.Price;
+        existingProduct.Quantity = product.Quantity;
+        existingProduct.CategoryId = product.CategoryId;
+        existingProduct.IsActive = product.IsActive;
+        
         await context.SaveChangesAsync();
     }
 

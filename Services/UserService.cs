@@ -70,7 +70,17 @@ public class UserService : IUserService
         if ((user.Role == "Admin" || user.Role == "Staff") && user.CustomerId != null)
             throw new InvalidOperationException("Admin and Staff roles cannot be linked to a customer");
 
-        context.Users.Update(user);
+        var existingUser = await context.Users.FindAsync(user.UserId);
+        if (existingUser == null)
+            throw new InvalidOperationException($"User with ID {user.UserId} not found");
+        
+        existingUser.Username = user.Username;
+        existingUser.Password = user.Password;
+        existingUser.Role = user.Role;
+        existingUser.CustomerId = user.CustomerId;
+        existingUser.FullName = user.FullName;
+        existingUser.IsActive = user.IsActive;
+        
         await context.SaveChangesAsync();
     }
 

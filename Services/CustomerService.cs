@@ -55,7 +55,16 @@ public class CustomerService : ICustomerService
     {
         _authorizationService.EnsureCanUpdate("Customers");
         using var context = new ShopAccessoriesContext();
-        context.Customers.Update(customer);
+        
+        var existingCustomer = await context.Customers.FindAsync(customer.CustomerId);
+        if (existingCustomer == null)
+            throw new InvalidOperationException($"Customer with ID {customer.CustomerId} not found");
+        
+        existingCustomer.Name = customer.Name;
+        existingCustomer.Phone = customer.Phone;
+        existingCustomer.Email = customer.Email;
+        existingCustomer.IsActive = customer.IsActive;
+        
         await context.SaveChangesAsync();
     }
 
